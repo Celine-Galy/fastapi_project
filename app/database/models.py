@@ -9,3 +9,5 @@ class Commune(Base):
     id = Column(Integer, primary_key=True, index=True)
     nom_complet = Column(String)
     code_postal = Column(String)
+    code_departement = Column(String)
+
