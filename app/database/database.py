@@ -1,4 +1,5 @@
 import csv
+import inspect
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.database.models import Base, Commune
@@ -23,16 +24,16 @@ def read_csv():
         data = list(csv.reader(csvfile))
         result = []
         for row in data[1:]:
-        # Take two  entries of the first row as keys
+        # Take two entries of the first row as keys
             code_postal = data[0][2]
             nom_complet = data[0][10]
             code_departement = "département"
-            value1 = row[2] if len(row[2]) != 4 else '0' + row[2]
-            value2 = row[10].upper()
+            code_postal_value = row[2] if len(row[2]) != 4 else '0' + row[2]
+            nom_complet_value = row[10].upper()
         # Take the first two characters of the value1 as value2 except if the length of value1 is 4 and 
         # if value begins with 97,98,99 take the first three characters
-            value3 = value1[0:3] if value1[0:2] == "97" or value1[0:2] == "98" or value1[0:2] == "99" else value1[0:2]
-            commune_dict = {code_postal: value1, nom_complet: value2, code_departement: value3}
+            code_departement_value = code_postal_value[0:3] if code_postal_value[0:2] == "97" or code_postal_value[0:2] == "98" or code_postal_value[0:2] == "99" else code_postal_value[0:2]
+            commune_dict = {code_postal: code_postal_value, nom_complet: nom_complet_value, code_departement: code_departement_value}
             result.append(commune_dict)
             populate_db(commune_dict)
     return result
@@ -50,16 +51,18 @@ def init_db():
     try:
         print('Connected to the database')
         # Create the tables
-        Base.metadata.drop_all(engine)
-        Base.metadata.create_all(engine)
-        db = SessionLocal()
-        read_csv()
-        db.close()
-        
+        # Base.metadata.drop_all(engine)
+        if not inspect.isclass(Commune):
+            print('Creating tables')
+            Base.metadata.create_all(engine)
+            db = SessionLocal()
+            read_csv()
+            db.close()
+        else:
+            print('Tables already exist')
+            
     except Exception as e:
         print(f'Error: {e}')
-        print('Failed to connect to the database')
-
+        raise e
     finally:
-        print('Database connection closed')
-        db.close()
+        print('Database initialization completed')
