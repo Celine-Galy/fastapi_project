@@ -5,7 +5,7 @@ services:
     build: .
     image: celinegaly/fastapi:latest
     ports:
-      - "80:80"
+      - "8000:8000"
     depends_on:
       - db
   db:

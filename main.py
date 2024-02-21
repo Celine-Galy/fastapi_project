@@ -10,5 +10,5 @@ async def root() -> str:
     init_db()
     return 'Hello, World!'
 
-
+ 
 app.include_router(router)
