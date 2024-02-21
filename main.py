@@ -1,52 +1,14 @@
 from fastapi import FastAPI
-from app.database.database import SessionLocal, init_db
-from app.database.models import Commune
+from app.database.database import init_db
+from app.routes.api import router
 
 
 app = FastAPI()
-communes = []
 
 @app.get('/')
 async def root() -> str:
     init_db()
     return 'Hello, World!'
 
-@app.get("/communes")
-async def get_commune():
-    session = SessionLocal()
-    communes = session.query(Commune).all()
-    return communes
 
-@app.get("/commune/{nom_complet}")
-async def get_commune_by_name(nom_complet: str):
-    session = SessionLocal()
-    commune = session.query(Commune).filter(Commune.nom_complet == nom_complet).first()
-    return commune
-
-@app.get("/communes/{code_departement}")
-async def get_communes_by_department(code_departement: str) -> list:
-    session = SessionLocal()
-    communes_list = []
-    communes = session.query(Commune).filter(Commune.code_departement == code_departement).all()
-    for commune in communes:
-        communes_list.append(commune.nom_complet)
-    return communes_list
-
-@app.post("/create")
-async def create_commune(code_postal: str, nom_complet: str, code_departement: str):
-    commune = Commune(code_postal=code_postal, nom_complet=nom_complet.upper(), code_departement=code_departement)
-    session = SessionLocal()
-    session.add(commune)
-    session.commit()
-    return {"commune created": commune}
-
-@app.patch("/update")
-async def update_commune(id:int ,code_postal: str, nom_complet: str, code_departement: str):
-    session = SessionLocal()
-    commune = session.query(Commune).filter(Commune.id == id).update({
-            "code_postal": code_postal,
-            "nom_complet": nom_complet, 
-            "code_departement": code_departement
-            })
-    session.commit()
-    return {"commune updated": commune}
+app.include_router(router)

@@ -1,6 +1,9 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11
 
+# Copy main.py to the container
+COPY main.py /app/main.py
+
 # Set the working directory in docker
 WORKDIR /app
 

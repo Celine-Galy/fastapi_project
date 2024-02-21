@@ -1,8 +1,8 @@
 import csv
 import inspect
 from sqlalchemy import create_engine
+from app.database.models import  Commune, Base
 from sqlalchemy.orm import sessionmaker
-from app.database.models import Base, Commune
 
 # Database configuration - PostgreSQL
 # Think to create a .env file to store the sensitive data
@@ -18,6 +18,7 @@ DATABASE_URL = f'postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_por
 # Create the database engine
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def read_csv():
     with open('communes-departement-region.csv', newline='', encoding='utf-8') as csvfile:
@@ -40,11 +41,15 @@ def read_csv():
 
 def populate_db(commune_dict):
     commune = commune_dict = Commune(code_postal=commune_dict['code_postal'], nom_complet=commune_dict['nom_commune_complet'], code_departement=commune_dict['département'])
-    session = SessionLocal()
-    session.add(commune)
-    session.commit()
-    session.refresh(commune)
-    session.close()
+    try:
+        session = SessionLocal()
+        session.add(commune)
+        session.commit()
+        session.close()
+    except Exception as e:
+        print(f'Error: {e}')
+        print('Rolling back the session')
+        raise e
 
 
 def init_db():

@@ -3,12 +3,13 @@ version: '3'
 services:
   app:
     build: .
+    image: celinegaly/fastapi:latest
     ports:
       - "80:80"
     depends_on:
       - db
   db:
-    image: postgres:latest
+    image: celinegaly/postgres:latest
     container_name: postgres_container
     environment:
       POSTGRES_PASSWORD: postgres
