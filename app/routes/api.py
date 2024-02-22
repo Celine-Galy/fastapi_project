@@ -1,5 +1,6 @@
-from app.database.database import SessionLocal
+
 from sqlalchemy import func
+from app.database.database import SessionLocal
 from app.database.models import Commune
 from fastapi import APIRouter
 

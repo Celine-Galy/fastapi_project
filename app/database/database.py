@@ -12,12 +12,24 @@ db_host = 'localhost'
 db_name = 'fastapi'
 db_port = 5432
 
-DATABASE_URL = f'postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
+
+def create_db():
+    # Create a new engine without the database name
+    engine_without_db = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}', isolation_level="AUTOCOMMIT")
+    
+    # Vérifier si la base de données existe déjà
+    with engine_without_db.connect() as connection:
+            connection.execute(text(f"CREATE DATABASE {db_name}"))
+            connection.close()
+       
+    print('Database created successfully')
+    return True
 
 # Create the database engine
-engine = create_engine(DATABASE_URL)
+engine = create_engine(f'postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 session = SessionLocal()
+
 def read_csv():
     with open('communes-departement-region.csv', newline='', encoding='utf-8') as csvfile:
         data = list(csv.reader(csvfile))
@@ -32,7 +44,6 @@ def read_csv():
                 code_postal_value = '0' + row[2]
             else:
                 code_postal_value = row[2]
-           
             nom_complet_value = row[10].upper()
         # Take the first two characters of the value1 as value2 except if the length of value1 is 4 and 
         # if value begins with 97,98,99 take the first three characters
@@ -48,24 +59,8 @@ def read_csv():
 
 def populate_db(commune_dict):
     commune = commune_dict = Commune(code_postal=commune_dict['code_postal'], nom_complet=commune_dict['nom_commune_complet'], code_departement=commune_dict['département'])
-    try:
-        session.add(commune)
-        
-    except Exception as e:
-        print(f'Error: {e}')
-        print('Rolling back the session')
-        raise e
-
-def create_db():
-    try:
-        session.execute(text(f"CREATE DATABASE {db_name}"))
-       
-        print('Database created successfully')
-    except Exception as e:
-        print(f'Error: {e}')
-        raise e
-    finally:
-        print('Database creation completed')
+    session.add(commune)
+     
 
 def bd_is_created():
     try:
@@ -81,25 +76,30 @@ def bd_is_created():
         raise e
     finally:
         print('Database check completed')
-
+        
 def init_db():
+ 
     Base.metadata.drop_all(bind=engine)
     # Check if the database exists
     if bd_is_created() == False:
         try:
             create_db()
-            Base.metadata.create_all(bind=engine)
+        except Exception as e:
+            print(f'Error: {e}')
+            raise e
+
+    elif bd_is_created() == True:
+        print('Database already exists')
+        try:
+            engine_with_db = create_engine(f'postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+            Base.metadata.create_all(bind=engine_with_db)
+            print('Database tables created successfully')
             read_csv()
+            
         except Exception as e:
             print(f'Error: {e}')
             raise e
         finally:
             print('Database initialization completed')
-    else:
-        print('Database already exists')
-        Base.metadata.create_all(bind=engine)
-        read_csv()
-        print('Database initialization completed')
-    session.commit()
-    session.close()
-
+            session.commit()
+            session.close()
